@@ -1,0 +1,215 @@
+x<!doctype html>
+<html lang="pt-AO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b0d">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Angola — Memórias de Guerra</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080b0d;color:#f2f2f2;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+button,input{font:inherit}button{touch-action:manipulation}.screen{display:none;min-height:100vh;padding:20px}.show{display:block}
+.hero{width:min(1100px,100%);margin:auto}.black{background:#000;display:flex;align-items:center;justify-content:center;text-align:center}
+.cover,.menu-cover{width:min(100%,900px);display:block;margin:0 auto 18px;border-radius:18px;border:1px solid #33404a}
+.title{font-size:clamp(30px,7vw,72px);letter-spacing:2px;margin:4px 0}.muted{color:#aab4ba}
+.card{background:#12181d;border:1px solid #29343c;border-radius:16px;padding:18px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.btn{border:0;border-radius:10px;padding:12px 18px;background:#e9e9e9;color:#101010;cursor:pointer}.btn.primary{font-weight:800}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.pill{display:inline-block;padding:5px 9px;border:1px solid #3a4650;border-radius:999px;margin:3px}
+#game{position:relative;padding:0;overflow:hidden}#c{width:100%;height:100dvh;display:block}
+.hud{position:absolute;inset:12px;pointer-events:none}.panel{pointer-events:auto;background:#0b0f12dd;border:1px solid #33404a;border-radius:12px;padding:10px;max-width:380px}
+.right{position:absolute;right:0;top:0}.bottom{position:absolute;left:0;right:0;bottom:0}.chat{max-height:140px;overflow:auto;margin-bottom:8px}
+.objective{margin:6px 0}.done{text-decoration:line-through;opacity:.55}.visual-stage{width:100%;margin:12px 0}
+.visual-stage img{width:100%;height:300px;object-fit:cover;border-radius:14px;border:1px solid #33404a}
+.level-art{width:100%;height:230px;object-fit:cover;border-radius:12px;border:1px solid #33404a;margin:8px 0}
+.scene-caption{font-size:.92rem;color:#c8d0d4}.progressbar{height:8px;background:#263139;border-radius:99px;overflow:hidden}
+.progressbar>span{display:block;height:100%;background:#d7d7d7;width:5%;transition:width .3s}.status{min-height:1.3em}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#f2f2f2;color:#111;padding:12px 16px;border-radius:10px;z-index:50;display:none}.toast.show{display:block}
+@media(max-width:600px){.screen{padding:12px}.panel{max-width:calc(100vw - 24px)}.right{top:8px}.bottom{bottom:8px}.level-art{height:180px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"></script>
+</head>
+<body>
+<section id="intro" class="screen black show"><div class="hero">
+<img class="cover" src="capa.png" alt="Capa de Angola — Memórias de Guerra">
+<div class="title">ANGOLA</div><h2>MEMÓRIAS DE GUERRA</h2>
+<p class="muted">A tua voz apresenta esta história.</p>
+<div class="visual-stage"><img id="openingArt" src="abertura_01.jpg" alt="Cena de abertura"></div>
+<audio id="introAudio" controls preload="metadata" style="width:100%"><source src="abertura.opus" type="audio/ogg"></audio>
+<audio id="bgMusic" loop preload="auto"><source src="musica_abertura_original.wav" type="audio/wav"></audio>
+<div style="height:10px"></div><button id="startBtn" class="btn primary">INICIAR JOGO</button>
+<p class="muted">A abertura só aparece na primeira entrada. Podes revê-la no menu.</p>
+</div></section>
+
+<section id="menu" class="screen"><div class="hero">
+<img class="menu-cover" src="capa.png" alt="Capa">
+<h1>ANGOLA — MEMÓRIAS DE GUERRA</h1>
+<div class="card"><b>Campanha</b><p id="progress"></p><div class="progressbar"><span id="bar"></span></div>
+<div style="height:10px"></div><button id="continueBtn" class="btn primary">CONTINUAR</button></div>
+<div class="grid">
+<div class="card"><h3>Amigos</h3><input id="friend" placeholder="Nome do jogador"><div style="height:8px"></div><button id="friendBtn" class="btn">Adicionar</button><div id="friends"></div></div>
+<div class="card"><h3>Multiplayer</h3><p class="muted">Sala online, chat e sinalização para voz.</p><button id="connectBtn" class="btn">Conectar</button><p id="onlineMenu" class="status muted">A verificar...</p></div>
+<div class="card"><h3>Abertura</h3><button id="replayBtn" class="btn">Ver abertura novamente</button></div>
+</div>
+<div class="card"><h3>Conta</h3><input id="user" placeholder="nome"><div style="height:8px"></div><input id="pass" type="password" placeholder="palavra-passe">
+<div style="height:8px"></div><div class="row"><button id="registerBtn" class="btn">Criar conta</button><button id="loginBtn" class="btn">Entrar</button></div><p id="authmsg" class="status muted"></p></div>
+<div class="card"><b>Compatibilidade</b><p class="muted">O jogo adapta-se a Android, iPhone/iPad e computador.</p></div>
+</div></section>
+
+<section id="game" class="screen"><canvas id="c"></canvas><div class="hud">
+<div class="panel"><b id="lvl"></b><img id="levelArt" class="level-art" src="level_01.jpg" alt="Imagem da missão">
+<div id="sceneCaption" class="scene-caption"></div><div id="obj"></div>
+<div class="row"><button id="objectiveBtn" class="btn">Concluir objetivo</button><button id="menuBtn" class="btn">Menu</button></div></div>
+<div class="panel right"><b>Equipa</b><div id="online"></div></div>
+<div class="panel bottom"><div class="chat" id="chat"></div><div class="row"><input id="chatInput" placeholder="Mensagem">
+<button id="chatBtn" class="btn">Enviar</button><button id="voiceBtn" class="btn">🎙️ Voz</button></div></div>
+</div></section>
+
+<section id="finish" class="screen black"><div class="hero"><h1>CAMINHO PARA A PAZ</h1>
+<img id="finishArt" class="cover" src="final_01.jpg" alt="Imagem final">
+<p class="title">O passado nos ensina.<br>A paz nos une.<br>O futuro é nosso.</p>
+<audio id="finalAudio" controls preload="metadata" style="width:100%"><source src="final.opus" type="audio/ogg"></audio>
+<div style="height:12px"></div><button id="finishMenuBtn" class="btn">VOLTAR AO MENU</button></div></section>
+
+<div id="toast" class="toast"></div>
+<script>
+'use strict';
+let level=Number(localStorage.getItem('amg_level')||1);
+if(level<1||level>20)level=1;
+let scene,cam,renderer,ws,objectives=[],objIndex=0,openingTimer=null,finalTimer=null,audioCtx=null;
+
+const missions=[
+'Primeiro caminho','Rota segura','Ponto de encontro','Mensagem','Primeiro comando',
+'Dois caminhos','Recursos','Travessia','Equipa unida','Posto avançado',
+'Mapa maior','Ordem correta','Longa missão','Decisão','Grande desafio',
+'Mudança de plano','Último percurso','Pressão','Às portas do fim','CAMINHO PARA A PAZ'
+];
+const descriptions=[
+'Um caminho de terra ao amanhecer. A equipa aprende a orientar-se e a observar o ambiente.',
+'Estradas rurais e sinais de referência ajudam a escolher um percurso seguro.',
+'Uma pequena comunidade serve de referência para reunir a equipa.',
+'A missão é entregar uma mensagem e confirmar que chegou ao destino.',
+'A equipa aprende a dividir tarefas e comunicar com clareza.',
+'Duas rotas possíveis exigem atenção ao mapa e aos sinais.',
+'É preciso organizar água, mapas e outros recursos de forma responsável.',
+'Uma ponte e um rio obrigam a planear a travessia em equipa.',
+'A cooperação torna o percurso mais eficiente.',
+'Um ponto de observação ajuda a compreender a área.',
+'A missão aumenta de escala e exige mais orientação.',
+'As tarefas devem ser realizadas na ordem certa.',
+'O percurso é mais longo e exige organização.',
+'A equipa compara informações antes de escolher o próximo passo.',
+'Vários objetivos aparecem e precisam de coordenação.',
+'Uma alteração do percurso exige adaptação.',
+'A equipa aproxima-se do objetivo final da campanha.',
+'Tempo e comunicação tornam o planeamento mais importante.',
+'A última grande etapa prepara a conclusão da história.',
+'A campanha termina com uma mensagem de memória, união e paz.'
+];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('show'));$(id).classList.add('show')}
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
+function updateMenu(){let p=Math.round(level/20*100);$('progress').textContent=`Nível ${level} / 20 — ${missions[level-1]}`;$('bar').style.width=p+'%';let a=JSON.parse(localStorage.getItem('friends')||'[]');$('friends').innerHTML=a.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}
+function enter(){localStorage.setItem('amg_seen','1');$('introAudio').pause();show('menu');updateMenu();toast('Jogo iniciado')}
+function replay(){show('intro');$('introAudio').currentTime=0;$('openingArt').src='abertura_01.jpg';let i=0;clearInterval(openingTimer);openingTimer=setInterval(()=>{$('openingArt').src=`abertura_${String(++i%5+1).padStart(2,'0')}.jpg`},5000);$('introAudio').play().catch(()=>{})}
+function startLevel(){show('game');setup3D();rebuildWorld();makeObjectives()}
+function setup3D(){
+  if(renderer)return;
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x11171b);
+  cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,1000);
+  cam.position.set(0,7,15);
+  renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x223344,2.2));
+  const sun=new THREE.DirectionalLight(0xffffff,1.5);sun.position.set(8,15,8);scene.add(sun);
+  buildWorld();
+  (function loop(){requestAnimationFrame(loop);if(scene)renderer.render(scene,cam)})();
+}
+function mat(c){return new THREE.MeshStandardMaterial({color:c,roughness:.9,metalness:0});}
+function box(w,h,d,x,y,z,m){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);scene.add(o);return o;}
+function buildWorld(){
+  const g=new THREE.Mesh(new THREE.PlaneGeometry(100,100),mat(0x3d493f));g.rotation.x=-Math.PI/2;scene.add(g);
+  const group=new THREE.Group();scene.add(group);
+  const lv=level;
+  let era,wall,roof,door,window,road,extra;
+  if(lv<=15){
+    era='PERÍODO HISTÓRICO — NÍVEL '+lv;
+    wall=lv<=5?0x8b765c:lv<=10?0x9a8063:0xa58b70;
+    roof=lv<=5?0x6b5948:0x735f4e;
+    door=0x4e3828;window=0x273238;road=0x665b4b;extra=0x74654f;
+  }else if(lv<=19){
+    era='TRANSIÇÃO — NÍVEL '+lv;
+    wall=0xb0aaa0;roof=0x777b7d;door=0x4c3c32;window=0x4d6570;road=0x77736a;extra=0x9a968e;
+  }else{
+    era='ANGOLA MODERNA — NÍVEL 20';
+    wall=0xd7d7d2;roof=0x3f454a;door=0x33383c;window=0x4e6974;road=0x777a78;extra=0xbfc2c0;
+  }
+  // Estrada central: a mesma área acompanha a passagem do tempo.
+  box(5,.08,70,0,.04,0,mat(road));
+  // Casa principal evolutiva.
+  const w=6,h=lv<=15?2.6:lv<=19?3.0:3.4,d=5;
+  box(w,h,d,0,h/2,-4,mat(wall));
+  // Telhado simples/estruturado/moderno.
+  if(lv<=15){
+    const roofObj=box(w+.35,.35,d+.35,0,h+.18,-4,mat(roof));
+    roofObj.rotation.z=0;
+    // Pequeno beiral para aspecto de construção simples.
+  }else if(lv<=19){
+    box(w+.45,.42,d+.45,0,h+.22,-4,mat(roof));
+    box(2.8,.9,.18,0,h+.66,-4,mat(extra));
+  }else{
+    box(w+.5,.3,d+.5,0,h+.18,-4,mat(roof));
+    box(3.2,.12,1.5,0,h+.39,-4,mat(0x30383c));
+  }
+  // Porta e janelas.
+  box(1.05,1.9,.12,0,.95,-6.56,mat(door));
+  box(1.0,.85,.1,-1.85,1.55,-6.56,mat(window));
+  box(1.0,.85,.1,1.85,1.55,-6.56,mat(window));
+  if(lv>=11){box(.18,2.3,.18,-2.75,1.15,-6.6,mat(extra));box(.18,2.3,.18,2.75,1.15,-6.6,mat(extra));}
+  // Segunda casa ao fundo: também muda com o nível.
+  const w2=lv<=15?4.5:lv<=19?5.2:6.2,h2=lv<=15?2.2:lv<=19?2.8:3.2;
+  box(w2,h2,4.2,-10,h2/2,-13,mat(wall));
+  box(w2+.3,.32,4.5,-10,h2+.16,-13,mat(roof));
+  box(.9,1.6,.1,-10,.8,-15.15,mat(door));
+  // Elementos do ambiente que aparecem progressivamente.
+  if(lv>=6){box(2,.1,2,6,.08,-4,mat(extra));box(.12,1.3,.12,5.1,.65,-4,mat(extra));}
+  if(lv>=11){for(let i=0;i<3;i++)box(.35,.5,.35,7+i*.65,.25,-10,mat(0x6f5a42));}
+  if(lv>=16){for(let i=0;i<4;i++)box(.18,1.6,.18,-6+i*1.5,.8,-7.3,mat(0x7a7975));}
+  if(lv===20){
+    box(7,.12,3,0,.12,-8,mat(0x8c8f8d));
+    box(.12,2.1,.12,-3.3,1.05,-6.5,mat(0x33383c));
+    box(.12,2.1,.12,3.3,1.05,-6.5,mat(0x33383c));
+  }
+  // Árvores/vegetação para dar continuidade visual ao bairro.
+  for(let i=0;i<10;i++){
+    const x=(i%2?1:-1)*(12+Math.random()*8),z=-2-i*3;
+    box(.25,1.6,.25,x,.8,z,mat(0x4d3f31));
+    const crown=box(1.5,1.4,1.5,x,2,z,mat(lv>=20?0x50644e:0x59634e));
+  }
+  const label=document.createElement('div');label.id='eraLabel';label.style.cssText='position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#0b0f12dd;border:1px solid #33404a;border-radius:999px;padding:8px 14px;font-weight:700;z-index:4';label.textContent=era;document.getElementById('game').appendChild(label);
+}
+function rebuildWorld(){if(!scene)return;while(scene.children.length)scene.remove(scene.children[0]);scene.add(new THREE.HemisphereLight(0xffffff,0x223344,2.2));const sun=new THREE.DirectionalLight(0xffffff,1.5);sun.position.set(8,15,8);scene.add(sun);buildWorld();}
+
+function makeObjectives(){objIndex=0;let n=Math.min(5,2+Math.floor((level-1)/4));objectives=Array.from({length:n},(_,i)=>`Objetivo ${i+1}: explorar a área e completar a tarefa ${i+1}`);$('lvl').textContent=`NÍVEL ${level} / 20 — ${missions[level-1]}`;$('levelArt').src=`level_${String(level).padStart(2,'0')}.jpg`;$('sceneCaption').textContent=descriptions[level-1];renderObj()}
+function renderObj(){$('obj').innerHTML=objectives.map((x,i)=>`<div class="objective ${i<objIndex?'done':''}">${i<objIndex?'✓':'○'} ${x}</div>`).join('')}
+function completeObjective(){if(objIndex>=objectives.length)return;objIndex++;renderObj();if(objIndex===objectives.length){if(level<20){level++;localStorage.setItem('amg_level',level);setTimeout(()=>{show('menu');updateMenu();toast(`PARABÉNS! PASSASTE DE NÍVEL. Nível ${level}.`)},650)}else showFinish()}}
+function showFinish(){show('finish');$('finalAudio').currentTime=0;$('finishArt').src='final_01.jpg';let i=0;clearInterval(finalTimer);finalTimer=setInterval(()=>{$('finishArt').src=`final_${String(++i%4+1).padStart(2,'0')}.jpg`},5500);$('finalAudio').play().catch(()=>{})}
+function backMenu(){show('menu');updateMenu();$('finalAudio').pause()}
+function wsUrl(){return (location.protocol==='https:'?'wss':'ws')+'://'+location.host}
+function connect(){if(ws&&ws.readyState===1)return;try{ws=new WebSocket(wsUrl());$('onlineMenu').textContent='A ligar...';ws.onopen=()=>{$('onlineMenu').textContent='Ligado ao servidor';$('online').textContent='Ligado ao servidor'};ws.onclose=()=>{$('onlineMenu').textContent='Offline';$('online').textContent='Offline'};ws.onerror=()=>{$('onlineMenu').textContent='Erro de ligação'};ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==='chat'){$('chat').innerHTML+=`<div><b>${esc(m.from)}:</b> ${esc(m.text)}</div>`}}}catch(e){$('onlineMenu').textContent='Offline'}}
+function auth(action){connect();setTimeout(()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'auth',action,username:$('user').value.trim(),password:$('pass').value}))},400)}
+function addFriend(){let f=$('friend').value.trim();if(!f)return;let a=JSON.parse(localStorage.getItem('friends')||'[]');if(!a.includes(f))a.push(f);localStorage.setItem('friends',JSON.stringify(a));updateMenu()}
+function sendChat(){let t=$('chatInput').value.trim();if(t&&ws&&ws.readyState===1){ws.send(JSON.stringify({type:'chat',text:t}));$('chatInput').value=''}else toast('Liga ao servidor para usar o chat')}
+function voice(){toast('A função de voz depende das permissões do microfone e de dois jogadores ligados.')}
+$('startBtn').onclick=enter;$('continueBtn').onclick=startLevel;$('replayBtn').onclick=replay;$('connectBtn').onclick=connect;
+$('friendBtn').onclick=addFriend;$('registerBtn').onclick=()=>auth('register');$('loginBtn').onclick=()=>auth('login');
+$('objectiveBtn').onclick=completeObjective;$('menuBtn').onclick=backMenu;$('chatBtn').onclick=sendChat;$('voiceBtn').onclick=voice;$('finishMenuBtn').onclick=backMenu;
+$('chatInput').onkeydown=e=>{if(e.key==='Enter')sendChat()};
+if(localStorage.getItem('amg_seen'))show('menu');else replay();updateMenu();connect();
+addEventListener('resize',()=>{if(cam&&renderer){cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}});
+</script>
+</body>
+  </html>
