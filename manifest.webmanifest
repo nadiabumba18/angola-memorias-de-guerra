@@ -1,0 +1,10 @@
+{
+  "name":"Angola — Memórias de Guerra",
+  "short_name":"Memórias de Guerra",
+  "start_url":"./",
+  "display":"fullscreen",
+  "orientation":"landscape",
+  "background_color":"#080b0d",
+  "theme_color":"#080b0d",
+  "icons":[{"src":"assets/capa.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+}
